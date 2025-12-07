@@ -1,0 +1,80 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: hms-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - hms-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: hms-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - hms-network
+
+  postgres-auth:
+    image: postgres:15
+    container_name: hms-postgres-auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    networks:
+      - hms-network
+
+  postgres-patient:
+    image: postgres:15
+    container_name: hms-postgres-patient
+    environment:
+      POSTGRES_DB: patient_db
+      POSTGRES_USER: patient_user
+      POSTGRES_PASSWORD: patient_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-patient-data:/var/lib/postgresql/data
+    networks:
+      - hms-network
+
+  postgres-appointment:
+    image: postgres:15
+    container_name: hms-postgres-appointment
+    environment:
+      POSTGRES_DB: appointment_db
+      POSTGRES_USER: appointment_user
+      POSTGRES_PASSWORD: appointment_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-appointment-data:/var/lib/postgresql/data
+    networks:
+      - hms-network
+
+volumes:
+  postgres-auth-data:
+  postgres-patient-data:
+  postgres-appointment-data:
+
+networks:
+  hms-network:
+    driver: bridge
